@@ -20,6 +20,11 @@ MSPs and IT teams face alert overload from monitoring tools, forcing technicians
 
 ---
 
+
+- **Demo Video**: [Demo](https://drive.google.com/file/d/1vCoVAGeOSbDB42ZIQ2_ZeHM2uRz62KaG/view?usp=sharing)
+
+---
+
 ## 💡 Our Solution
 
 A **context-aware agentic platform** that handles ALL IT operations:
@@ -94,17 +99,6 @@ start frontend\index.html
 2. API documentation: http://localhost:8000/docs
 3. Frontend should show critical disk space alert
 4. Click "Start Analysis" to see AI in action!
-
----
-
-## 🎬 Demo Flow
-
-1. **Alert Appears**: Critical disk space on PROD-DB-01 (95% full)
-2. **AI Analysis**: Gemini Pro gathers context and analyzes root cause
-3. **Plan Generation**: Creates step-by-step remediation with safety checks
-4. **Human Approval**: Technician reviews and approves execution
-5. **Automated Execution**: PowerShell script runs via RMM (demo mode)
-6. **Results**: 12.3 GB freed, disk at 42%, ticket auto-closed in **4 minutes**
 
 **Watch Demo**: [Link to video]
 
@@ -409,64 +403,12 @@ cat .env
 
 ---
 
-## 📚 Documentation
-
-- **Pitch Deck**: `pitch-deck/PITCH_DECK_COMPLETE.md` (14 slides)
-- **Demo Script**: `pitch-deck/DEMO_SCRIPT_ENHANCED.md` (2-minute walkthrough)
-- **Quick Reference**: `QUICK_REFERENCE.md` (demo day cheat sheet)
-- **Execution Summary**: `pitch-deck/EXECUTION_SUMMARY.md` (project roadmap)
-- **API Docs**: http://localhost:8000/docs (when backend running)
-
----
-
-## 🗺️ Roadmap
-
-### Phase 1: MVP (Current - Hackathon Demo)
-- ✅ Working prototype with Gemini AI
-- ✅ 4 alert types (disk, CPU, patch, service)
-- ✅ Demo mode execution
-- ✅ Beautiful web UI
-- ✅ Complete documentation
-
-### Phase 2: Beta (Q1 2026)
-- [ ] Real RMM integrations (ConnectWise, NinjaRMM)
-- [ ] 20+ alert type support
-- [ ] Multi-tenancy for MSPs
-- [ ] Advanced context fusion
-- [ ] Feedback learning loop
-
-### Phase 3: Production (Q2 2026)
-- [ ] All major ITSM platforms
-- [ ] Predictive alerting
-- [ ] Custom playbook builder
-- [ ] Enterprise security features
-- [ ] SOC2 Type II certification
-
-### Phase 4: Marketplace (Q3-Q4 2026)
-- [ ] SuperOps Agent Marketplace listing
-- [ ] Community SOP repository
-- [ ] AI-driven capacity planning
-- [ ] Cross-platform orchestration
-
----
-
 ## 👥 Team
 
 **Team Integrator**
 - **Muhammed Sahil** - Team Leader & Full-Stack Developer
 
 Built for SuperHack 2025 in 7 days with passion and late-night debugging sessions! 🚀
-
----
-
-## 📄 License
-
-MIT License - See LICENSE file for details
-
----
-
-
-- **Demo Video**: [Demo](https://drive.google.com/file/d/1vCoVAGeOSbDB42ZIQ2_ZeHM2uRz62KaG/view?usp=sharing)
 
 ---
 
@@ -495,5 +437,8 @@ It helps others discover this solution and motivates us to keep improving it.
 
 ---
 
-*Last Updated: October 2025 | Version 1.0.0 | SuperHack 2025 Submission*
->>>>>>> a740ab4 (feat: initial commit - SuperHack 2025 submission)
+## 📄 License
+
+MIT License - See LICENSE file for details
+
+---
