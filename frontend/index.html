@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agentic Alert Triage Assistant</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .typing-indicator {
+            display: inline-block;
+            animation: blink 1.4s infinite;
+        }
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+        .alert-pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: .5; }
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .spinner {
+            border: 3px solid #f3f4f6;
+            border-top: 3px solid #3b82f6;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen">
+    <!-- Header -->
+    <header class="bg-gray-800 border-b border-gray-700 p-4 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <svg class="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+                <div>
+                    <h1 class="text-xl font-bold">Agentic Alert Triage</h1>
+                    <p class="text-xs text-gray-400">AI-Powered Remediation Assistant</p>
+                </div>
+            </div>
+            <div class="text-sm text-gray-400 flex items-center space-x-4">
+                <span id="current-time">2:17 AM</span>
+                <span class="text-green-400 flex items-center">
+                    <span class="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></span>
+                    Online
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-7xl mx-auto p-6">
+        <!-- Alert Section -->
+        <div id="alert-section" class="mb-6">
+            <div class="bg-red-900/30 border border-red-700 rounded-lg p-6 alert-pulse">
+                <div class="flex items-start justify-between">
+                    <div class="flex-1">
+                        <div class="flex items-center space-x-3 mb-3">
+                            <span class="px-3 py-1 bg-red-600 text-white text-xs font-bold rounded-full">CRITICAL</span>
+                            <h2 class="text-2xl font-bold text-red-400">Disk Space Alert</h2>
+                        </div>
+                        <div class="space-y-2 mb-4">
+                            <p class="text-gray-300">
+                                <span class="text-gray-400">System:</span> <span class="font-semibold">PROD-DB-01</span> | 
+                                <span class="text-gray-400">Alert ID:</span> <span class="font-semibold">INC0012345</span>
+                            </p>
+                            <p class="text-gray-300">
+                                <span class="text-gray-400">Time:</span> <span id="alert-timestamp">2025-10-11 02:17:00 UTC</span>
+                            </p>
+                        </div>
+                        <p class="text-lg text-gray-200 mb-3 flex items-center">
+                            <svg class="w-5 h-5 text-red-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                            Disk space critical on C:\ drive - <span class="text-red-400 font-bold ml-1">95% full</span>
+                        </p>
+                        <div class="bg-gray-800 rounded p-4 font-mono text-sm space-y-1">
+                            <div class="flex justify-between">
+                                <span class="text-gray-400">Disk Used:</span>
+                                <span class="text-red-400 font-semibold">456 GB / 480 GB</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-400">Partition:</span>
+                                <span>C:\</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-400">Usage:</span>
+                                <span class="text-red-400 font-semibold">95%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <button onclick="startAnalysis()" id="analyze-btn" class="ml-4 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed">
+                        <span class="flex items-center">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                            </svg>
+                            Start Analysis
+                        </span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analysis Section -->
+        <div id="analysis-section" class="mb-6 hidden fade-in">
+            <div class="bg-gray-800 border border-gray-700 rounded-lg p-6">
+                <h3 class="text-xl font-bold mb-4 flex items-center">
+                    <div class="spinner mr-3"></div>
+                    AI Analysis in Progress<span class="typing-indicator ml-1">...</span>
+                </h3>
+                <div class="space-y-3 text-gray-400">
+                    <p class="flex items-center">
+                        <svg class="w-5 h-5 text-green-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                        Ingesting alert from monitoring system
+                    </p>
+                    <p class="flex items-center">
+                        <svg class="w-5 h-5 text-green-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                        Gathering device history from ITSM
+                    </p>
+                    <p class="flex items-center">
+                        <svg class="w-5 h-5 text-green-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                        Retrieving SOPs from knowledge base
+                    </p>
+                    <p id="analysis-status" class="flex items-center">
+                        <div class="spinner mr-2"></div>
+                        Analyzing with Gemini Pro reasoning engine
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Remediation Plan -->
+        <div id="plan-section" class="mb-6 hidden fade-in">
+            <div class="bg-gray-800 border border-green-700 rounded-lg p-6">
+                <h3 class="text-xl font-bold mb-4 text-green-400 flex items-center">
+                    <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Remediation Plan Generated
+                </h3>
+                
+                <div class="mb-4 p-4 bg-gray-900 rounded-lg border border-gray-700">
+                    <h4 class="font-semibold text-yellow-400 mb-2 flex items-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                        </svg>
+                        Root Cause Analysis
+                    </h4>
+                    <p id="root-cause" class="text-gray-300 mb-2"></p>
+                    <p class="text-sm text-gray-400">
+                        Confidence: <span id="confidence" class="text-green-400 font-bold"></span>
+                    </p>
+                    <p id="reasoning" class="text-sm text-gray-500 mt-2 italic"></p>
+                </div>
+
+                <div class="mb-4">
+                    <h4 class="font-semibold mb-2 flex items-center">
+                        <svg class="w-5 h-5 mr-2 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                        </svg>
+                        Remediation Steps:
+                    </h4>
+                    <ol id="steps-list" class="list-decimal list-inside space-y-2 text-gray-300 ml-4"></ol>
+                </div>
+
+                <div class="mb-4">
+                    <h4 class="font-semibold mb-2 flex items-center">
+                        <svg class="w-5 h-5 mr-2 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                        </svg>
+                        Generated PowerShell Script:
+                    </h4>
+                    <pre id="script-content" class="bg-gray-950 p-4 rounded text-sm overflow-x-auto font-mono text-green-400 border border-gray-700 max-h-64 overflow-y-auto"></pre>
+                </div>
+
+                <div class="mb-4 p-3 bg-yellow-900/20 border border-yellow-700 rounded">
+                    <h4 class="font-semibold text-yellow-400 mb-2 flex items-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        Safety Checks:
+                    </h4>
+                    <ul id="safety-list" class="list-disc list-inside space-y-1 text-gray-300 text-sm ml-4"></ul>
+                </div>
+
+                <div class="flex space-x-4">
+                    <button onclick="approveExecution()" class="flex-1 px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition shadow-lg hover:shadow-xl">
+                        <span class="flex items-center justify-center">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                            Approve & Execute
+                        </span>
+                    </button>
+                    <button onclick="rejectPlan()" class="px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition">
+                        <span class="flex items-center">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                            Reject
+                        </span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Execution Results -->
+        <div id="results-section" class="hidden fade-in">
+            <div class="bg-gray-800 border border-green-700 rounded-lg p-6">
+                <h3 class="text-xl font-bold mb-4 text-green-400 flex items-center">
+                    <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Remediation Completed Successfully
+                </h3>
+                
+                <div class="mb-4 p-4 bg-gray-900 rounded font-mono text-sm overflow-x-auto border border-gray-700">
+                    <pre id="execution-output" class="text-green-400"></pre>
+                </div>
+
+                <div class="grid grid-cols-3 gap-4 mb-6">
+                    <div class="bg-green-900/30 border border-green-700 rounded p-4 text-center">
+                        <div class="text-3xl font-bold text-green-400">4 min</div>
+                        <div class="text-sm text-gray-400 mt-1">MTTR</div>
+                        <div class="text-xs text-gray-500">(vs 45 min manual)</div>
+                    </div>
+                    <div class="bg-blue-900/30 border border-blue-700 rounded p-4 text-center">
+                        <div class="text-3xl font-bold text-blue-400">42%</div>
+                        <div class="text-sm text-gray-400 mt-1">New Disk Usage</div>
+                        <div class="text-xs text-gray-500">(was 95%)</div>
+                    </div>
+                    <div class="bg-purple-900/30 border border-purple-700 rounded p-4 text-center">
+                        <div class="text-3xl font-bold text-purple-400">12.3 GB</div>
+                        <div class="text-sm text-gray-400 mt-1">Space Freed</div>
+                        <div class="text-xs text-gray-500">(247 files cleaned)</div>
+                    </div>
+                </div>
+
+                <div class="p-4 bg-green-900/20 border border-green-700 rounded">
+                    <h4 class="font-semibold text-green-400 mb-2 flex items-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        Ticket Status Update:
+                    </h4>
+                    <div class="text-gray-300 space-y-1 text-sm">
+                        <p><span class="text-gray-400">Ticket ID:</span> <span class="font-semibold">INC0012345</span></p>
+                        <p><span class="text-gray-400">Status:</span> <span class="text-green-400 font-semibold">RESOLVED</span></p>
+                        <p><span class="text-gray-400">Resolution:</span> Automated remediation via AI assistant</p>
+                        <p><span class="text-gray-400">Closed at:</span> <span id="close-time">2:21 AM</span> (4 minutes after alert)</p>
+                    </div>
+                </div>
+
+                <div class="mt-6 text-center">
+                    <button onclick="location.reload()" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition">
+                        <span class="flex items-center">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                            Process Another Alert
+                        </span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const API_BASE = 'http://localhost:8000';
+        const ALERT_ID = 'INC0012345';
+
+        // Update time display
+        function updateTime() {
+            const now = new Date();
+            document.getElementById('current-time').textContent = 
+                now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+        }
+        setInterval(updateTime, 1000);
+        updateTime();
+
+        async function startAnalysis() {
+            const btn = document.getElementById('analyze-btn');
+            btn.disabled = true;
+            btn.innerHTML = '<div class="spinner"></div><span class="ml-2">Analyzing...</span>';
+            
+            document.getElementById('analysis-section').classList.remove('hidden');
+            
+            try {
+                // Call analyze endpoint
+                const response = await fetch(`${API_BASE}/alerts/${ALERT_ID}/analyze`, {
+                    method: 'POST'
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`API error: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                // Wait a moment for visual effect
+                setTimeout(() => {
+                    displayPlan(data.plan);
+                }, 2000);
+                
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Analysis failed: ' + error.message);
+                btn.disabled = false;
+                btn.innerHTML = 'Start Analysis';
+            }
+        }
+
+        function displayPlan(plan) {
+            document.getElementById('analysis-section').classList.add('hidden');
+            document.getElementById('plan-section').classList.remove('hidden');
+            
+            document.getElementById('root-cause').textContent = plan.root_cause;
+            document.getElementById('confidence').textContent = Math.round(plan.confidence * 100) + '%';
+            document.getElementById('reasoning').textContent = plan.reasoning || '';
+            document.getElementById('script-content').textContent = plan.script;
+            
+            // Populate steps
+            const stepsList = document.getElementById('steps-list');
+            stepsList.innerHTML = plan.steps.map(step => `<li class="mb-2">${step}</li>`).join('');
+            
+            // Populate safety checks
+            const safetyList = document.getElementById('safety-list');
+            safetyList.innerHTML = plan.safety_checks.map(check => `<li class="mb-1">${check}</li>`).join('');
+        }
+
+        async function approveExecution() {
+            document.getElementById('plan-section').classList.add('hidden');
+            
+            try {
+                const response = await fetch(`${API_BASE}/alerts/${ALERT_ID}/execute?approved=true`, {
+                    method: 'POST'
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Execution failed: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                displayResults(data);
+                
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Execution failed: ' + error.message);
+            }
+        }
+
+        function displayResults(data) {
+            document.getElementById('results-section').classList.remove('hidden');
+            document.getElementById('execution-output').textContent = data.output;
+            
+            const now = new Date();
+            document.getElementById('close-time').textContent = 
+                now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+        }
+
+        function rejectPlan() {
+            if (confirm('Are you sure you want to reject this remediation plan?')) {
+                alert('Remediation rejected by technician. Alert remains open for manual review.');
+                location.reload();
+            }
+        }
+    </script>
+</body>
+</html>

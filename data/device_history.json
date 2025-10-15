@@ -1,0 +1,72 @@
+{
+    "PROD-DB-01": [
+        {
+            "date": "2025-09-15",
+            "issue": "Disk space 92% - IIS logs accumulation",
+            "resolution_time": 38,
+            "action_taken": "Manual cleanup of old IIS logs, archived to backup location",
+            "outcome": "Resolved - disk reduced to 65%",
+            "technician": "John Smith"
+        },
+        {
+            "date": "2025-08-22",
+            "issue": "High CPU usage - runaway Node.js process",
+            "resolution_time": 52,
+            "action_taken": "Process terminated and service restarted after confirmation",
+            "outcome": "Resolved - CPU normalized to 15%",
+            "technician": "Sarah Johnson"
+        },
+        {
+            "date": "2025-07-10",
+            "issue": "Disk space 89% - temp file buildup",
+            "resolution_time": 45,
+            "action_taken": "Cleaned Windows temp directories and application cache",
+            "outcome": "Resolved - disk reduced to 58%",
+            "technician": "Mike Chen"
+        },
+        {
+            "date": "2025-06-05",
+            "issue": "Missing critical security patches - CVE-2024-XXXX",
+            "resolution_time": 65,
+            "action_taken": "Downloaded and installed KB5034567, scheduled reboot",
+            "outcome": "Resolved - system patched and compliant",
+            "technician": "John Smith"
+        }
+    ],
+    "PROD-WEB-02": [
+        {
+            "date": "2025-09-20",
+            "issue": "Memory leak in IIS application pool",
+            "resolution_time": 28,
+            "action_taken": "Recycled application pool, monitored for recurrence",
+            "outcome": "Resolved - memory usage normalized",
+            "technician": "John Smith"
+        },
+        {
+            "date": "2025-08-15",
+            "issue": "Pending Windows Updates - 15 critical patches",
+            "resolution_time": 72,
+            "action_taken": "Installed patches during maintenance window, rebooted",
+            "outcome": "Resolved - system fully patched",
+            "technician": "Sarah Johnson"
+        },
+        {
+            "date": "2025-07-28",
+            "issue": "IIS service stopped unexpectedly",
+            "resolution_time": 12,
+            "action_taken": "Restarted IIS service, checked Event Logs",
+            "outcome": "Resolved - service stable, app pool timeout was cause",
+            "technician": "Mike Chen"
+        }
+    ],
+    "PROD-APP-03": [
+        {
+            "date": "2025-09-10",
+            "issue": "SQL Server service failure after patch",
+            "resolution_time": 95,
+            "action_taken": "Rolled back patch, restarted service, escalated to vendor",
+            "outcome": "Resolved - service restored, patch deferred",
+            "technician": "Sarah Johnson"
+        }
+    ]
+}

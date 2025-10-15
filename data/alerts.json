@@ -1,0 +1,14 @@
+{
+    "id": "INC0012345",
+    "timestamp": "2025-10-11T02:17:00Z",
+    "severity": "critical",
+    "system": "PROD-DB-01",
+    "alert_type": "disk_space",
+    "description": "Disk space critical on C:\\ drive - 95% full",
+    "metrics": {
+        "disk_used_percent": 95,
+        "disk_used_gb": 456,
+        "disk_total_gb": 480,
+        "partition": "C:\\"
+    }
+}

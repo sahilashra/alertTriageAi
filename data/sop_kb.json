@@ -1,0 +1,92 @@
+{
+    "patch_management_windows": {
+        "title": "Windows Patch Management and Security Updates",
+        "triggers": ["pending updates", "missing patch", "security update", "windows update", "patch required"],
+        "systems": ["Windows Server"],
+        "steps": [
+            "Scan system for missing critical and security patches",
+            "Check maintenance window and change approval status",
+            "Download required updates from WSUS or Windows Update",
+            "Create system restore point as backup before patching",
+            "Install patches in priority order (critical security first)",
+            "Verify installation success and check for pending reboots",
+            "Schedule reboot during approved maintenance window",
+            "Document patch compliance in ITSM ticket"
+        ],
+        "script_template": "patch_management.ps1",
+        "safety_notes": [
+            "Always create restore point before installing patches",
+            "Verify maintenance window approval before execution",
+            "Check application dependencies before reboot",
+            "Test patches in non-production environment first when possible",
+            "Never force reboot during business hours without approval"
+        ]
+    },
+    "disk_space_windows": {
+        "title": "Windows Disk Space Remediation",
+        "triggers": ["disk_space", "disk full", "storage alert", "disk critical"],
+        "systems": ["Windows Server"],
+        "steps": [
+            "Identify large files and temporary directories consuming space",
+            "Check IIS logs in C:\\inetpub\\logs for accumulation",
+            "Archive or delete logs older than 30 days per retention policy",
+            "Verify disk usage reduction after cleanup",
+            "Update monitoring threshold if disk usage normalized",
+            "Document actions taken in incident ticket"
+        ],
+        "script_template": "disk_cleanup.ps1",
+        "safety_notes": [
+            "Never delete current day logs - only files older than retention period",
+            "Always create backup before deletion for compliance",
+            "Check for required retention policies before cleanup",
+            "Verify sufficient space in backup location",
+            "Test restore process from backup before marking resolved"
+        ]
+    },
+    "high_cpu_windows": {
+        "title": "Windows High CPU Usage Remediation",
+        "triggers": ["high cpu", "cpu spike", "cpu usage", "processor", "performance degradation"],
+        "systems": ["Windows Server"],
+        "steps": [
+            "Identify process consuming excessive CPU using Task Manager data",
+            "Check if process is critical system service or application",
+            "Review recent changes, deployments, or configuration updates",
+            "Gather process details (PID, command line, user context)",
+            "If non-critical application: restart service with logging",
+            "If critical service: escalate to application team with diagnostics",
+            "Monitor CPU usage post-remediation for 15 minutes",
+            "Update monitoring baseline if legitimate workload increase"
+        ],
+        "script_template": "cpu_diagnostics.ps1",
+        "safety_notes": [
+            "Never terminate critical Windows services (lsass, csrss, services, etc.)",
+            "Confirm with application owner before restarting services",
+            "Document process ID and full details before any action",
+            "Collect diagnostic data (dump file) before restart for analysis",
+            "Monitor for process respawn indicating underlying issue"
+        ]
+    },
+    "service_restart_windows": {
+        "title": "Windows Service Health Check and Restart",
+        "triggers": ["service down", "service stopped", "service failure", "application unavailable"],
+        "systems": ["Windows Server"],
+        "steps": [
+            "Verify service status and check Event Logs for errors",
+            "Review service dependencies and ensure they are running",
+            "Check application-specific logs for root cause",
+            "Backup service configuration before changes",
+            "Attempt service restart with proper startup type",
+            "Verify service starts successfully and remains running",
+            "Test application functionality after service restart",
+            "Document incident and root cause in ticket"
+        ],
+        "script_template": "service_restart.ps1",
+        "safety_notes": [
+            "Check for dependent services before restart",
+            "Ensure restart won't impact active user sessions",
+            "Verify service account credentials are valid",
+            "Create diagnostic logs before restart attempt",
+            "Monitor for repeated failures indicating deeper issues"
+        ]
+    }
+}

@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  backend:
+    build: .
+    container_name: alert-triage-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - USE_CACHED_RESPONSES=${USE_CACHED_RESPONSES:-false}
+      - DEMO_MODE=${DEMO_MODE:-true}
+      - HOST=0.0.0.0
+      - PORT=8000
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    volumes:
+      - ./data:/app/data:ro
+      - ./scripts:/app/scripts:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    networks:
+      - alert-triage-network
+
+  # Optional: Add Nginx for frontend serving
+  frontend:
+    image: nginx:alpine
+    container_name: alert-triage-frontend
+    ports:
+      - "80:80"
+    volumes:
+      - ./frontend:/usr/share/nginx/html:ro
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - alert-triage-network
+
+networks:
+  alert-triage-network:
+    driver: bridge
+
+# Usage:
+# 1. Copy .env.example to .env and fill in your API key
+# 2. Run: docker-compose up -d
+# 3. Access frontend at http://localhost
+# 4. Access API at http://localhost:8000
+# 5. View logs: docker-compose logs -f
+# 6. Stop: docker-compose down
