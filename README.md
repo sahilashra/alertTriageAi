@@ -1,7 +1,3 @@
-<<<<<<< HEAD
-# alertTriageAi
-AI-powered alert triage &amp; remediation platform for MSPs and IT teams.
-=======
 # Agentic Alert Triage & Remediation Assistant
 
 **SuperHack 2025 Submission - Team Integrator**
