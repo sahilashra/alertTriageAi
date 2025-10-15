@@ -109,13 +109,13 @@ start frontend\index.html
 ```
 ┌─────────────────────┐
 │ Monitoring Tools    │  ServiceNow, Datadog
-│ & ITSM Platforms   │  SuperOps, Prometheus
+│ & ITSM Platforms    │  SuperOps, Prometheus
 └──────────┬──────────┘
            │
            ▼
 ┌─────────────────────┐
 │ Alert Ingestion     │  FastAPI + REST APIs
-│ Engine             │  Real-time processing
+│ Engine              │  Real-time processing
 └──────────┬──────────┘
            │
            ▼
@@ -140,7 +140,7 @@ start frontend\index.html
            ▼
 ┌─────────────────────┐
 │ RMM Execution       │  PowerShell/SSH
-│ Layer              │  Encrypted Credentials
+│ Layer               │  Encrypted Credentials
 └──────────┬──────────┘
            │
            ▼
