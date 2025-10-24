@@ -92,7 +92,6 @@ Just visit the URL and:
 
 ```powershell
 # 1. Clone or download the project
-cd C:\Sahil\Projects\SuperOps\alert-triage-ai
 
 # 2. Create virtual environment (if not exists)
 python -m venv .venv
