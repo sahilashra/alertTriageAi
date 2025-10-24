@@ -1,35 +1,75 @@
 '''
-Gemini AI Service for Alert Triage
-Uses Google Gemini Pro for intelligent alert analysis and remediation planning
+AWS Bedrock AI Service for Alert Triage
+Uses Claude 3.5 Sonnet via AWS Bedrock for intelligent alert analysis
 '''
-import google.generativeai as genai
+import boto3
 import json
 import os
 from typing import Dict, List
-from models import Alert, RemediationPlan
+from backend.models import Alert, RemediationPlan
+from botocore.exceptions import ClientError
 
 
-class GeminiService:
+class BedrockService:
     '''
-    LLM service using Google Gemini Pro
+    LLM service using AWS Bedrock with Claude 3.5 Sonnet
     Analyzes alerts and generates safe remediation scripts
     '''
-    
+
     def __init__(self):
-        self.api_key = os.getenv("GEMINI_API_KEY")
-        if not self.api_key:
-            raise ValueError("GEMINI_API_KEY not set in environment. Please add it to your .env file")
-        
-        # Configure Gemini API
-        genai.configure(api_key=self.api_key)
-        
-        # Use Gemini 1.5 Pro for complex reasoning tasks
-        self.model = genai.GenerativeModel('gemini-1.5-pro-latest')
-        
+        # AWS credentials from environment
+        self.aws_region = os.getenv("AWS_REGION", "us-east-1")
+        self.aws_access_key = os.getenv("AWS_ACCESS_KEY_ID")
+        self.aws_secret_key = os.getenv("AWS_SECRET_ACCESS_KEY")
+        self.aws_session_token = os.getenv("AWS_SESSION_TOKEN")  # For SSO/temporary credentials
+
+        # Initialize Bedrock Runtime client
+        # boto3 will automatically use credentials in this order:
+        # 1. Explicit credentials from .env (if provided)
+        # 2. AWS CLI credentials (~/.aws/credentials)
+        # 3. IAM role (if running on EC2/Lambda)
+        # 4. SSO credentials (if aws sso login was used)
+        try:
+            client_kwargs = {
+                'service_name': 'bedrock-runtime',
+                'region_name': self.aws_region
+            }
+
+            # Only add explicit credentials if they're set in .env
+            # Otherwise, boto3 will use AWS CLI/SSO credentials automatically
+            if self.aws_access_key and self.aws_secret_key:
+                client_kwargs['aws_access_key_id'] = self.aws_access_key
+                client_kwargs['aws_secret_access_key'] = self.aws_secret_key
+
+                # Add session token if present (for temporary/SSO credentials)
+                if self.aws_session_token:
+                    client_kwargs['aws_session_token'] = self.aws_session_token
+                    print("[OK] Using temporary/SSO credentials from .env")
+                else:
+                    print("[OK] Using permanent credentials from .env")
+            else:
+                print("[OK] Using AWS CLI/SSO credentials (no explicit credentials in .env)")
+
+            self.bedrock = boto3.client(**client_kwargs)
+            print(f"[OK] AWS Bedrock client initialized (region: {self.aws_region})")
+        except Exception as e:
+            raise ValueError(
+                f"Failed to initialize AWS Bedrock client: {str(e)}\n\n"
+                f"Troubleshooting:\n"
+                f"1. For SSO: Run 'aws sso login' first\n"
+                f"2. For temp credentials: Add AWS_SESSION_TOKEN to .env\n"
+                f"3. For permanent credentials: Add AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY to .env"
+            )
+
+        # Amazon Nova Pro - AWS-native AI model
+        # Benefits: Immediately available, no approval needed, cost-effective, AWS-native
+        self.model_id = "amazon.nova-pro-v1:0"
+        self.model_name = "Amazon Nova Pro"
+
         # Fallback cache for demo reliability
         self.use_cache = os.getenv("USE_CACHED_RESPONSES", "false").lower() == "true"
         self.cached_responses = self._load_cached_responses()
-    
+
     def _load_cached_responses(self) -> Dict:
         '''
         Load pre-cached demo responses as fallback
@@ -70,14 +110,14 @@ try {
         Write-Host "This may indicate IIS is not installed or logs are in different location" -ForegroundColor Yellow
         exit 1
     }
-    
+
     Write-Host "✓ Log path verified: $LogPath" -ForegroundColor Green
 
     # Find old logs
     Write-Host "Scanning for logs older than $DaysToKeep days..." -ForegroundColor Cyan
-    $OldLogs = Get-ChildItem -Path $LogPath -Recurse -File | 
+    $OldLogs = Get-ChildItem -Path $LogPath -Recurse -File |
                Where-Object { $_.LastWriteTime -lt $CutoffDate }
-    
+
     if ($OldLogs.Count -eq 0) {
         Write-Host "No old logs found. Disk space issue may be elsewhere." -ForegroundColor Yellow
         Write-Host "Consider checking:" -ForegroundColor Yellow
@@ -86,13 +126,13 @@ try {
         Write-Host "  - Database files" -ForegroundColor Gray
         exit 0
     }
-    
+
     $TotalSize = ($OldLogs | Measure-Object -Property Length -Sum).Sum / 1GB
     $TotalSizeRounded = [math]::Round($TotalSize, 2)
-    
+
     Write-Host "✓ Found $($OldLogs.Count) files totaling $TotalSizeRounded GB" -ForegroundColor Green
     Write-Host ""
-    
+
     # Create backup directory (safety measure)
     Write-Host "Preparing backup location..." -ForegroundColor Cyan
     if (-not (Test-Path $BackupPath)) {
@@ -101,18 +141,18 @@ try {
     } else {
         Write-Host "✓ Backup directory exists: $BackupPath" -ForegroundColor Green
     }
-    
+
     # Backup old logs (optional but recommended for compliance)
     Write-Host ""
     Write-Host "Creating backup of logs before deletion..." -ForegroundColor Yellow
     Write-Host "This may take a few moments..." -ForegroundColor Gray
-    
+
     $BackupCount = 0
     foreach ($log in $OldLogs) {
         try {
             Copy-Item -Path $log.FullName -Destination $BackupPath -Force -ErrorAction Stop
             $BackupCount++
-            
+
             # Progress indicator every 50 files
             if ($BackupCount % 50 -eq 0) {
                 Write-Host "  Backed up $BackupCount files..." -ForegroundColor Gray
@@ -121,22 +161,22 @@ try {
             Write-Host "Warning: Could not backup $($log.Name): $($_.Exception.Message)" -ForegroundColor Yellow
         }
     }
-    
+
     Write-Host "✓ Backup complete: $BackupCount files backed up" -ForegroundColor Green
     Write-Host ""
-    
+
     # Delete old logs
     Write-Host "Deleting old logs..." -ForegroundColor Yellow
     $DeletedCount = 0
     $DeletedSize = 0
-    
+
     foreach ($log in $OldLogs) {
         try {
             $fileSize = $log.Length
             Remove-Item -Path $log.FullName -Force -ErrorAction Stop
             $DeletedCount++
             $DeletedSize += $fileSize
-            
+
             # Progress indicator
             if ($DeletedCount % 50 -eq 0) {
                 $deletedGB = [math]::Round($DeletedSize / 1GB, 2)
@@ -146,25 +186,25 @@ try {
             Write-Host "Warning: Could not delete $($log.Name): $($_.Exception.Message)" -ForegroundColor Yellow
         }
     }
-    
+
     $FinalDeletedSize = [math]::Round($DeletedSize / 1GB, 2)
     Write-Host "✓ Cleanup complete" -ForegroundColor Green
     Write-Host "  Files deleted: $DeletedCount" -ForegroundColor Cyan
     Write-Host "  Space freed: $FinalDeletedSize GB" -ForegroundColor Cyan
     Write-Host ""
-    
+
     # Verify new disk usage
     Write-Host "Verifying disk space..." -ForegroundColor Cyan
     $Disk = Get-PSDrive C
     $UsedPercent = [math]::Round(($Disk.Used / ($Disk.Used + $Disk.Free)) * 100, 2)
     $UsedGB = [math]::Round($Disk.Used / 1GB, 2)
     $FreeGB = [math]::Round($Disk.Free / 1GB, 2)
-    
+
     Write-Host "Current disk usage:" -ForegroundColor Cyan
     Write-Host "  Used: $UsedGB GB ($UsedPercent%)" -ForegroundColor $(if ($UsedPercent -lt 80) { "Green" } else { "Yellow" })
     Write-Host "  Free: $FreeGB GB" -ForegroundColor Green
     Write-Host ""
-    
+
     if ($UsedPercent -lt 80) {
         Write-Host "SUCCESS: Disk usage now within acceptable range" -ForegroundColor Green
         Write-Host "Alert can be marked as RESOLVED" -ForegroundColor Green
@@ -175,12 +215,12 @@ try {
         Write-Host "WARNING: Disk usage still critical" -ForegroundColor Red
         Write-Host "Further investigation needed - logs may not be primary cause" -ForegroundColor Yellow
     }
-    
+
     Write-Host ""
     Write-Host "=" * 60 -ForegroundColor Gray
     Write-Host "Cleanup operation completed successfully" -ForegroundColor Green
     Write-Host "Backup location: $BackupPath" -ForegroundColor Gray
-    
+
 } catch {
     Write-Host ""
     Write-Host "=" * 60 -ForegroundColor Red
@@ -210,7 +250,7 @@ try {
                 "rollback_plan": "If issues occur, all deleted logs are backed up at D:\\Backups\\IISLogs. To restore, run: Copy-Item 'D:\\Backups\\IISLogs\\*' -Destination 'C:\\inetpub\\logs\\LogFiles' -Force. Script includes detailed error messages and graceful failure handling."
             }
         }
-    
+
     def load_sop_kb(self) -> Dict:
         '''Load SOP knowledge base from data directory'''
         try:
@@ -223,7 +263,7 @@ try {
         except json.JSONDecodeError as e:
             print(f"Warning: Failed to parse sop_kb.json: {e}")
             return {}
-    
+
     def load_device_history(self, system: str) -> List[Dict]:
         '''Load historical incidents for specific device'''
         try:
@@ -237,46 +277,46 @@ try {
         except json.JSONDecodeError as e:
             print(f"Warning: Failed to parse device_history.json: {e}")
             return []
-    
+
     def analyze_alert(self, alert: Alert) -> RemediationPlan:
         '''
-        Main analysis function using Gemini Pro
+        Main analysis function using Claude 3.5 Sonnet on Bedrock
         Implements safety-first prompt engineering
         '''
-        
+
         # Check cache first for demo reliability
         if self.use_cache and alert.id in self.cached_responses:
             print(f"Using cached response for alert {alert.id}")
             cached = self.cached_responses[alert.id]
             return RemediationPlan(alert_id=alert.id, **cached)
-        
+
         # Gather context from knowledge base and history
         sop_kb = self.load_sop_kb()
         device_history = self.load_device_history(alert.system)
-        
+
         # Find relevant SOP for this alert type
         relevant_sop = self._find_relevant_sop(alert.alert_type, sop_kb)
-        
+
         # Build context-aware prompt
-        prompt = self._build_analysis_prompt(alert, relevant_sop, device_history)
-        
-        # Call Gemini API with safety constraints
+        prompt_content = self._build_analysis_prompt(alert, relevant_sop, device_history)
+
+        # Call Bedrock API with safety constraints
         try:
-            print(f"Calling Gemini API to analyze alert {alert.id}...")
-            response_text = self._call_gemini(prompt)
+            print(f"Calling AWS Bedrock ({self.model_name}) to analyze alert {alert.id}...")
+            response_text = self._call_bedrock(prompt_content)
             plan = self._parse_remediation_plan(response_text, alert.id)
             print(f"Successfully generated remediation plan for {alert.id}")
             return plan
-            
+
         except Exception as e:
-            # Fallback to cached response if Gemini fails
-            print(f"Gemini API error: {e}")
+            # Fallback to cached response if Bedrock fails
+            print(f"Bedrock API error: {e}")
             if alert.id in self.cached_responses:
                 print(f"Falling back to cached response for {alert.id}")
                 cached = self.cached_responses[alert.id]
                 return RemediationPlan(alert_id=alert.id, **cached)
             raise Exception(f"Analysis failed and no cached response available: {str(e)}")
-    
+
     def _find_relevant_sop(self, alert_type: str, sop_kb: Dict) -> Dict:
         '''
         Find relevant SOP using simple keyword matching
@@ -287,13 +327,13 @@ try {
             if any(trigger in alert_type.lower() for trigger in triggers):
                 return sop_data
         return {}
-    
+
     def _build_analysis_prompt(self, alert: Alert, sop: Dict, history: List[Dict]) -> str:
         '''
-        Constructs the Gemini prompt with full context
+        Constructs the Claude prompt with full context
         Follows safety-first approach with explicit constraints
         '''
-        
+
         # Format historical context
         history_context = ""
         if history:
@@ -304,7 +344,7 @@ try {
                 history_context += f"  Action taken: {h['action_taken']}\n"
         else:
             history_context = "No historical incidents found for this system.\n"
-        
+
         # Format SOP steps
         sop_steps = ""
         if sop:
@@ -312,14 +352,14 @@ try {
             sop_steps += f"Title: {sop.get('title', 'N/A')}\n"
             for i, step in enumerate(sop.get("steps", []), 1):
                 sop_steps += f"{i}. {step}\n"
-            
+
             if sop.get("safety_notes"):
                 sop_steps += "\nSAFETY REQUIREMENTS FROM SOP:\n"
                 for note in sop["safety_notes"]:
                     sop_steps += f"- {note}\n"
         else:
             sop_steps = "No specific SOP found for this alert type. Use general best practices.\n"
-        
+
         # Main prompt with safety emphasis
         prompt = f'''You are an expert IT operations assistant specializing in alert triage and remediation for Windows Server environments.
 
@@ -387,67 +427,95 @@ IMPORTANT FORMATTING RULES:
 Generate the remediation plan now:'''
 
         return prompt
-    
-    def _call_gemini(self, prompt: str) -> str:
+
+    def _call_bedrock(self, prompt: str) -> str:
         '''
-        Call Gemini API with error handling and retry logic
+        Call AWS Bedrock API with Amazon Nova Pro
+        Uses the Messages API format required by Nova models
         '''
         try:
-            # Configure generation parameters for more deterministic output
-            generation_config = {
-                "temperature": 0.3,  # Lower for more consistent, focused responses
-                "top_p": 0.95,
-                "top_k": 40,
-                "max_output_tokens": 4000,  # Allow for longer scripts
+            # Prepare request body for Amazon Nova
+            # Nova uses a similar format to Claude but with different parameter names
+            request_body = {
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": [{"text": prompt}]
+                    }
+                ],
+                "inferenceConfig": {
+                    "max_new_tokens": 4000,
+                    "temperature": 0.3,  # Lower for more consistent, focused responses
+                    "top_p": 0.95
+                }
             }
-            
-            # Safety settings - we need to allow technical content
-            safety_settings = {
-                'HARASSMENT': 'block_none',
-                'HATE_SPEECH': 'block_none',
-                'SEXUALLY_EXPLICIT': 'block_none',
-                'DANGEROUS_CONTENT': 'block_none'
-            }
-            
-            response = self.model.generate_content(
-                prompt,
-                generation_config=generation_config,
-                safety_settings=safety_settings
+
+            # Call Bedrock API
+            response = self.bedrock.invoke_model(
+                modelId=self.model_id,
+                body=json.dumps(request_body)
             )
-            
-            # Check if response was blocked
-            if not response.text:
-                raise Exception("Gemini response was blocked or empty")
-            
-            return response.text
-            
+
+            # Parse response
+            response_body = json.loads(response['body'].read())
+
+            # Extract text from Nova's response
+            # Nova returns: {"output": {"message": {"content": [{"text": "..."}]}}}
+            if 'output' in response_body and 'message' in response_body['output']:
+                message = response_body['output']['message']
+                if 'content' in message and len(message['content']) > 0:
+                    response_text = message['content'][0]['text']
+                    return response_text
+
+            raise Exception("Bedrock response missing content")
+
+        except ClientError as e:
+            error_code = e.response['Error']['Code']
+            error_message = e.response['Error']['Message']
+
+            # Handle specific AWS errors
+            if error_code == 'ThrottlingException':
+                raise Exception(f"AWS Bedrock rate limit exceeded: {error_message}")
+            elif error_code == 'ModelNotReadyException':
+                raise Exception(f"Model {self.model_id} is not ready: {error_message}")
+            elif error_code == 'AccessDeniedException':
+                raise Exception(
+                    f"Access denied to AWS Bedrock. Please verify:\n"
+                    f"1. AWS credentials are correct\n"
+                    f"2. IAM user has bedrock:InvokeModel permission\n"
+                    f"3. Model {self.model_id} is enabled in your AWS account\n"
+                    f"Error: {error_message}"
+                )
+            else:
+                raise Exception(f"AWS Bedrock API error ({error_code}): {error_message}")
+
         except Exception as e:
-            raise Exception(f"Gemini API call failed: {str(e)}")
-    
-    def _parse_remediation_plan(self, gemini_response: str, alert_id: str) -> RemediationPlan:
+            raise Exception(f"Bedrock API call failed: {str(e)}")
+
+    def _parse_remediation_plan(self, bedrock_response: str, alert_id: str) -> RemediationPlan:
         '''
-        Parse Gemini JSON response into RemediationPlan object
+        Parse Claude JSON response into RemediationPlan object
         Handles various response formats and malformed JSON
         '''
         try:
             # Clean response - remove markdown if present
-            response_text = gemini_response.strip()
-            
-            # Remove code block markers if Gemini added them despite instructions
+            response_text = bedrock_response.strip()
+
+            # Remove code block markers if Claude added them despite instructions
             if "```json" in response_text:
                 response_text = response_text.split("```json")[1].split("```")[0].strip()
             elif "```" in response_text:
                 response_text = response_text.split("```")[1].split("```")[0].strip()
-            
+
             # Parse JSON
             data = json.loads(response_text)
-            
+
             # Validate required fields
             required_fields = ["root_cause", "confidence", "remediation_steps", "script"]
             missing = [f for f in required_fields if f not in data]
             if missing:
                 raise KeyError(f"Missing required fields: {missing}")
-            
+
             # Create RemediationPlan object
             return RemediationPlan(
                 alert_id=alert_id,
@@ -461,16 +529,16 @@ Generate the remediation plan now:'''
                 estimated_time=data.get("estimated_execution_time", "Unknown"),
                 rollback_plan=data.get("rollback_plan", "No specific rollback plan provided")
             )
-            
+
         except json.JSONDecodeError as e:
-            error_preview = gemini_response[:300] if len(gemini_response) > 300 else gemini_response
+            error_preview = bedrock_response[:300] if len(bedrock_response) > 300 else bedrock_response
             raise Exception(
-                f"Failed to parse Gemini response as JSON: {str(e)}\n"
+                f"Failed to parse Bedrock response as JSON: {str(e)}\n"
                 f"Response preview: {error_preview}..."
             )
         except KeyError as e:
-            raise Exception(f"Gemini response missing required field: {str(e)}")
+            raise Exception(f"Bedrock response missing required field: {str(e)}")
         except ValueError as e:
-            raise Exception(f"Invalid data type in Gemini response: {str(e)}")
+            raise Exception(f"Invalid data type in Bedrock response: {str(e)}")
         except Exception as e:
-            raise Exception(f"Error parsing Gemini response: {str(e)}")
+            raise Exception(f"Error parsing Bedrock response: {str(e)}")

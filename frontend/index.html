@@ -57,6 +57,13 @@
                 </div>
             </div>
             <div class="text-sm text-gray-400 flex items-center space-x-4">
+                <span class="px-3 py-1 bg-orange-600 text-white text-xs font-bold rounded-full flex items-center">
+                    <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M13.5 2c-5.621 0-10.211 4.443-10.475 10h-3.025l5 6.625 5-6.625h-2.975c.257-3.351 3.06-6 6.475-6 3.584 0 6.5 2.916 6.5 6.5s-2.916 6.5-6.5 6.5c-1.863 0-3.542-.793-4.728-2.053l-2.427 3.216c1.877 1.754 4.389 2.837 7.155 2.837 5.79 0 10.5-4.71 10.5-10.5s-4.71-10.5-10.5-10.5z"/>
+                    </svg>
+                    AWS Bedrock
+                </span>
+                <span class="text-xs text-gray-500">Amazon Nova Pro</span>
                 <span id="current-time">2:17 AM</span>
                 <span class="text-green-400 flex items-center">
                     <span class="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></span>
@@ -147,7 +154,7 @@
                     </p>
                     <p id="analysis-status" class="flex items-center">
                         <div class="spinner mr-2"></div>
-                        Analyzing with Gemini Pro reasoning engine
+                        Analyzing with AWS Bedrock (Amazon Nova Pro)
                     </p>
                 </div>
             </div>
@@ -242,7 +249,7 @@
                     <pre id="execution-output" class="text-green-400"></pre>
                 </div>
 
-                <div class="grid grid-cols-3 gap-4 mb-6">
+                <div class="grid grid-cols-4 gap-4 mb-6">
                     <div class="bg-green-900/30 border border-green-700 rounded p-4 text-center">
                         <div class="text-3xl font-bold text-green-400">4 min</div>
                         <div class="text-sm text-gray-400 mt-1">MTTR</div>
@@ -257,6 +264,11 @@
                         <div class="text-3xl font-bold text-purple-400">12.3 GB</div>
                         <div class="text-sm text-gray-400 mt-1">Space Freed</div>
                         <div class="text-xs text-gray-500">(247 files cleaned)</div>
+                    </div>
+                    <div class="bg-orange-900/30 border border-orange-700 rounded p-4 text-center">
+                        <div class="text-3xl font-bold text-orange-400" id="api-time">5.8s</div>
+                        <div class="text-sm text-gray-400 mt-1">API Response</div>
+                        <div class="text-xs text-gray-500">Cost: <span id="api-cost">$0.0018</span></div>
                     </div>
                 </div>
 
@@ -290,13 +302,21 @@
     </main>
 
     <script>
-        const API_BASE = 'http://localhost:8000';
+        const API_BASE = 'http://alert-triage-env.eba-ma57iqcm.us-east-1.elasticbeanstalk.com';
         const ALERT_ID = 'INC0012345';
+
+        // AWS Bedrock pricing for Amazon Nova Pro
+        const INPUT_COST_PER_1K = 0.0008;  // $0.0008 per 1K input tokens
+        const OUTPUT_COST_PER_1K = 0.0032; // $0.0032 per 1K output tokens
+
+        let apiResponseTime = 0;
+        let apiCost = 0;
+        let currentPlan = null;
 
         // Update time display
         function updateTime() {
             const now = new Date();
-            document.getElementById('current-time').textContent = 
+            document.getElementById('current-time').textContent =
                 now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
         }
         setInterval(updateTime, 1000);
@@ -306,26 +326,42 @@
             const btn = document.getElementById('analyze-btn');
             btn.disabled = true;
             btn.innerHTML = '<div class="spinner"></div><span class="ml-2">Analyzing...</span>';
-            
+
             document.getElementById('analysis-section').classList.remove('hidden');
-            
+
             try {
+                // Track response time
+                const startTime = performance.now();
+
                 // Call analyze endpoint
                 const response = await fetch(`${API_BASE}/alerts/${ALERT_ID}/analyze`, {
                     method: 'POST'
                 });
-                
+
+                const endTime = performance.now();
+                apiResponseTime = ((endTime - startTime) / 1000).toFixed(1); // Convert to seconds
+
                 if (!response.ok) {
                     throw new Error(`API error: ${response.statusText}`);
                 }
-                
+
                 const data = await response.json();
-                
+
+                // Store the plan for later execution
+                currentPlan = data.plan;
+
+                // Estimate cost (approximate based on typical usage)
+                // Typical: ~500 input tokens, ~400 output tokens
+                const estimatedInputTokens = 500;
+                const estimatedOutputTokens = 400;
+                apiCost = ((estimatedInputTokens / 1000) * INPUT_COST_PER_1K +
+                          (estimatedOutputTokens / 1000) * OUTPUT_COST_PER_1K).toFixed(4);
+
                 // Wait a moment for visual effect
                 setTimeout(() => {
                     displayPlan(data.plan);
                 }, 2000);
-                
+
             } catch (error) {
                 console.error('Error:', error);
                 alert('Analysis failed: ' + error.message);
@@ -354,10 +390,14 @@
 
         async function approveExecution() {
             document.getElementById('plan-section').classList.add('hidden');
-            
+
             try {
                 const response = await fetch(`${API_BASE}/alerts/${ALERT_ID}/execute?approved=true`, {
-                    method: 'POST'
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ plan: currentPlan })
                 });
                 
                 if (!response.ok) {
@@ -376,9 +416,13 @@
         function displayResults(data) {
             document.getElementById('results-section').classList.remove('hidden');
             document.getElementById('execution-output').textContent = data.output;
-            
+
+            // Update metrics with actual values
+            document.getElementById('api-time').textContent = apiResponseTime + 's';
+            document.getElementById('api-cost').textContent = '$' + apiCost;
+
             const now = new Date();
-            document.getElementById('close-time').textContent = 
+            document.getElementById('close-time').textContent =
                 now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
         }
 

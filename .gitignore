@@ -10,10 +10,12 @@ ENV/
 build/
 dist/
 *.egg-info/
+.venv/
 
 # Environment variables
 .env
 .env.local
+backend/.env
 
 # IDE
 .vscode/
@@ -28,3 +30,12 @@ Thumbs.db
 # Project specific
 *.log
 test_data/
+
+# Deployment packages
+*.zip
+*.tar.gz
+
+# AWS EB - ignore deployment artifacts but keep config
+# .elasticbeanstalk/*
+# !.elasticbeanstalk/*.cfg.yml
+# !.elasticbeanstalk/*.global.yml

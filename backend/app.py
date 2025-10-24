@@ -2,11 +2,11 @@
 FastAPI main application
 API endpoints for alert triage and remediation
 '''
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Body
 from fastapi.middleware.cors import CORSMiddleware
-from models import Alert, RemediationPlan, ExecutionResult, HealthCheck
-from gemini_service import GeminiService
-from script_executor import ScriptExecutor
+from backend.models import Alert, RemediationPlan, ExecutionResult, HealthCheck
+from backend.aws_bedrock_service import BedrockService
+from backend.script_executor import ScriptExecutor
 from dotenv import load_dotenv
 import os
 from datetime import datetime
@@ -32,11 +32,12 @@ app.add_middleware(
 
 # Initialize services
 try:
-    gemini_service = GeminiService()
-    gemini_configured = True
+    bedrock_service = BedrockService()
+    ai_service_configured = True
+    print("[OK] AWS Bedrock service initialized successfully")
 except Exception as e:
-    print(f"WARNING: Gemini service initialization failed: {e}")
-    gemini_configured = False
+    print(f"WARNING: Bedrock service initialization failed: {e}")
+    ai_service_configured = False
 
 script_executor = ScriptExecutor()
 
@@ -48,21 +49,21 @@ executions_db = {}
 # Auto-load demo alert on startup
 import json
 try:
-    with open("../data/alerts.json", "r") as f:
+    with open("data/alerts.json", "r") as f:
         demo_alert = json.load(f)
         alerts_db.append(demo_alert)
-        print(f"✅ Auto-loaded demo alert: {demo_alert['id']}")
+        print(f"[OK] Auto-loaded demo alert: {demo_alert['id']}")
 except Exception as e:
-    print(f"⚠️  Could not auto-load demo alert: {e}")
+    print(f"[WARN] Could not auto-load demo alert: {e}")
 
 @app.get("/", response_model=HealthCheck)
 def health_check():
     '''API health check'''
     return {
         "status": "healthy",
-        "service": "Alert Triage AI",
+        "service": "Alert Triage AI (AWS Bedrock)",
         "version": "1.0.0",
-        "gemini_configured": gemini_configured
+        "bedrock_configured": ai_service_configured
     }
 
 @app.post("/alerts/ingest")
@@ -97,7 +98,7 @@ async def get_alert(alert_id: str):
 @app.post("/alerts/{alert_id}/analyze")
 async def analyze_alert(alert_id: str):
     '''
-    Analyze alert with Gemini AI
+    Analyze alert with AWS Bedrock (Amazon Nova Pro)
     Generates remediation plan with safety checks
     '''
     # Find alert
@@ -108,16 +109,16 @@ async def analyze_alert(alert_id: str):
     # Convert to Alert model
     alert = Alert(**alert_data)
     
-    # Check if Gemini is configured
-    if not gemini_configured:
+    # Check if AI service is configured
+    if not ai_service_configured:
         raise HTTPException(
             status_code=503,
-            detail="Gemini service not configured. Please set GEMINI_API_KEY in .env file"
+            detail="AWS Bedrock service not configured. Please set AWS credentials in .env file"
         )
-    
-    # Analyze with Gemini
+
+    # Analyze with AWS Bedrock
     try:
-        plan = gemini_service.analyze_alert(alert)
+        plan = bedrock_service.analyze_alert(alert)
         plans_db[alert_id] = plan.dict()
         
         return {
@@ -140,10 +141,15 @@ async def get_remediation_plan(alert_id: str):
     return plans_db[alert_id]
 
 @app.post("/alerts/{alert_id}/execute")
-async def execute_remediation(alert_id: str, approved: bool = True):
+async def execute_remediation(
+    alert_id: str,
+    approved: bool = True,
+    request_body: dict = Body(None)
+):
     '''
     Execute approved remediation script
     Requires human approval
+    Accepts plan in request body to handle multi-worker deployments
     '''
     if not approved:
         return {
@@ -151,9 +157,13 @@ async def execute_remediation(alert_id: str, approved: bool = True):
             "message": "Execution cancelled by technician",
             "alert_id": alert_id
         }
-    
-    # Get remediation plan
-    plan = plans_db.get(alert_id)
+
+    # Get remediation plan from request body or memory
+    plan = None
+    if request_body and "plan" in request_body:
+        plan = request_body["plan"]
+    if not plan:
+        plan = plans_db.get(alert_id)
     if not plan:
         raise HTTPException(status_code=404, detail="Remediation plan not found")
     

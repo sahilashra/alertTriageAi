@@ -61,4 +61,4 @@ class HealthCheck(BaseModel):
     status: str
     service: str
     version: str = "1.0.0"
-    gemini_configured: bool
+    bedrock_configured: bool

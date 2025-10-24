@@ -2,11 +2,27 @@
 
 **SuperHack 2025 Submission - Team Integrator**
 
-[![Demo](https://img.shields.io/badge/Demo-Live-green)](frontend/index.html)
-[![Status](https://img.shields.io/badge/Status-Working%20Prototype-success)]()
-[![AI](https://img.shields.io/badge/AI-Google%20Gemini%20Pro-blue)]()
+[![Demo](https://img.shields.io/badge/Demo-Live-green)](http://alert-triage-env.eba-ma57iqcm.us-east-1.elasticbeanstalk.com)
+[![Status](https://img.shields.io/badge/Status-Production%20Deployed-success)]()
+[![AI](https://img.shields.io/badge/AI-AWS%20Bedrock-orange)]()
+[![Model](https://img.shields.io/badge/Model-Amazon%20Nova%20Pro-FF9900)]()
+[![Deployment](https://img.shields.io/badge/Deployed-AWS%20EB-FF9900)]()
 
 > An intelligent agentic platform that automates alert triage, patch management, and routine IT operations using AI-powered reasoning and closed-loop execution.
+
+## 🌐 Live Demo
+
+**🚀 Try it now:** [alert-triage-env.eba-ma57iqcm.us-east-1.elasticbeanstalk.com](http://alert-triage-env.eba-ma57iqcm.us-east-1.elasticbeanstalk.com)
+
+**Frontend:** Open `frontend/index.html` (already configured to use deployed backend)
+
+**What to try:**
+1. Click "Start Analysis" → AWS Bedrock analyzes the disk space alert
+2. Review the AI-generated remediation plan (92% confidence)
+3. Click "Approve & Execute" → See automated remediation in action
+4. View metrics: 4 min MTTR vs 45 min manual, $0.0018 cost per analysis
+
+**Deployment:** Production-ready on AWS Elastic Beanstalk with 4 Gunicorn workers
 
 ---
 
@@ -50,12 +66,26 @@ A **context-aware agentic platform** that handles ALL IT operations:
 
 ## 🚀 Quick Start
 
-### Prerequisites
+### Option 1: Use Live Demo (Easiest!)
+
+**No installation required!** Just open the frontend:
+
+1. Download or clone this repository
+2. Open `frontend/index.html` in any browser
+3. Click "Start Analysis" to see AWS Bedrock in action
+4. The frontend is already connected to our deployed backend
+
+**Backend API:** http://alert-triage-env.eba-ma57iqcm.us-east-1.elasticbeanstalk.com
+
+### Option 2: Run Locally
+
+#### Prerequisites
 - Python 3.9+
-- Google Gemini API Key ([Get it here](https://makersuite.google.com/app/apikey))
+- AWS Account with Bedrock Access ([Get started](https://aws.amazon.com/bedrock/))
+- AWS credentials configured (AWS CLI or environment variables)
 - Windows OS (for PowerShell scripts)
 
-### Installation
+#### Installation
 
 ```powershell
 # 1. Clone or download the project
@@ -68,11 +98,16 @@ python -m venv .venv
 .\.venv\Scripts\activate
 
 # 4. Install dependencies
-pip install fastapi uvicorn google-generativeai pydantic python-dotenv
+pip install fastapi uvicorn boto3 pydantic python-dotenv
 
-# 5. Configure API key
-# Edit .env file and add your Gemini API key:
-# GEMINI_API_KEY=your_actual_api_key_here
+# 5. Configure AWS credentials
+# Option 1: Use AWS CLI (recommended)
+aws configure
+
+# Option 2: Set environment variables in .env
+# AWS_ACCESS_KEY_ID=your_access_key
+# AWS_SECRET_ACCESS_KEY=your_secret_key
+# AWS_REGION=us-east-1
 ```
 
 ### Running the Application
@@ -95,12 +130,16 @@ start frontend\index.html
 
 ### Verification
 
+**For Live Demo:**
+1. Backend health check: http://alert-triage-env.eba-ma57iqcm.us-east-1.elasticbeanstalk.com/
+2. API documentation: http://alert-triage-env.eba-ma57iqcm.us-east-1.elasticbeanstalk.com/docs
+3. Open `frontend/index.html` and click "Start Analysis"
+
+**For Local Setup:**
 1. Backend health check: http://localhost:8000/
 2. API documentation: http://localhost:8000/docs
-3. Frontend should show critical disk space alert
+3. Update frontend/index.html line 305: `const API_BASE = 'http://localhost:8000';`
 4. Click "Start Analysis" to see AI in action!
-
-**Watch Demo**: [Link to video]
 
 ---
 
@@ -127,8 +166,9 @@ start frontend\index.html
            │
            ▼
 ┌─────────────────────┐
-│ Gemini Pro 1.5      │  Root Cause Analysis
-│ Reasoning Engine    │  Script Generation
+│ AWS Bedrock         │  Root Cause Analysis
+│ Amazon Nova Pro     │  Script Generation
+│ Reasoning Engine    │  Cost-Effective AI
 └──────────┬──────────┘
            │
            ▼
@@ -159,7 +199,7 @@ alert-triage-ai/
 ├── backend/
 │   ├── app.py                 # FastAPI server & endpoints
 │   ├── models.py              # Pydantic data models
-│   ├── gemini_service.py      # Gemini AI integration
+│   ├── aws_bedrock_service.py # AWS Bedrock integration
 │   ├── script_executor.py     # Script execution engine
 │   └── __init__.py
 ├── frontend/
@@ -192,7 +232,7 @@ alert-triage-ai/
 - ✅ Health Check: PASSED
 - ✅ Alert Ingestion: PASSED
 - ✅ List Alerts: PASSED
-- ✅ **Gemini AI Analysis: PASSED** (10-15 seconds)
+- ✅ **AWS Bedrock Analysis: PASSED** (5-8 seconds)
 - ✅ Remediation Plan: PASSED
 - ✅ Script Execution: PASSED
 - ✅ Statistics: PASSED
@@ -309,9 +349,15 @@ curl -X POST "http://localhost:8000/alerts/INC0012345/execute?approved=true"
 ### Backend
 - **Python 3.9+** - Core orchestration
 - **FastAPI** - REST API framework
-- **Google Gemini Pro 1.5** - AI reasoning engine
+- **AWS Bedrock (Amazon Nova Pro)** - AI reasoning engine
+- **boto3** - AWS SDK for Python
 - **Pydantic** - Data validation
-- **Uvicorn** - ASGI server
+- **Gunicorn + Uvicorn** - Production ASGI server (4 workers)
+
+### Deployment
+- **AWS Elastic Beanstalk** - Production hosting
+- **Python 3.11 Platform** - Latest stable runtime
+- **Multi-worker configuration** - 4 Gunicorn workers for scalability
 
 ### Frontend
 - **HTML5** - Structure
@@ -330,12 +376,69 @@ curl -X POST "http://localhost:8000/alerts/INC0012345/execute?approved=true"
 
 ---
 
+## 🚢 Production Deployment
+
+### Current Deployment (AWS Elastic Beanstalk)
+
+**Live URL:** http://alert-triage-env.eba-ma57iqcm.us-east-1.elasticbeanstalk.com
+
+**Configuration:**
+- Platform: Python 3.11 running on 64bit Amazon Linux 2023
+- Web Server: Gunicorn with 4 workers + Uvicorn workers
+- Region: us-east-1 (N. Virginia)
+- Environment: alert-triage-env
+- Application: alert-triage-ai
+
+**Environment Variables:**
+- AWS_ACCESS_KEY_ID (configured in EB environment)
+- AWS_SECRET_ACCESS_KEY (configured in EB environment)
+- AWS_SESSION_TOKEN (configured in EB environment)
+- AWS_REGION=us-east-1
+
+**Files for Deployment:**
+- `application.py` - EB entry point
+- `Procfile` - Process configuration for Gunicorn
+- `requirements.txt` - Python dependencies
+- All backend code and data files
+
+### Deploy Your Own Instance
+
+1. **Install AWS EB CLI:**
+   ```bash
+   pip install awsebcli
+   ```
+
+2. **Initialize EB:**
+   ```bash
+   eb init -p python-3.11 alert-triage-ai --region us-east-1
+   ```
+
+3. **Create deployment package:**
+   ```bash
+   python create_deploy_zip.py
+   ```
+
+4. **Deploy via AWS Console:**
+   - Go to AWS Elastic Beanstalk Console
+   - Create new application: "alert-triage-ai"
+   - Upload alert-triage-ai-v3.zip
+   - Configure environment variables (AWS credentials)
+   - Deploy!
+
+5. **Update frontend:**
+   - Edit `frontend/index.html` line 305
+   - Change `API_BASE` to your EB environment URL
+
+---
+
 ## 🔧 Configuration
 
 ### Environment Variables (.env)
 ```bash
-# Required
-GEMINI_API_KEY=your_gemini_api_key_here
+# AWS Credentials (Required)
+AWS_ACCESS_KEY_ID=your_access_key_id
+AWS_SECRET_ACCESS_KEY=your_secret_access_key
+AWS_REGION=us-east-1
 
 # Optional
 USE_CACHED_RESPONSES=false  # Set to true for demo reliability
@@ -385,19 +488,20 @@ python --version  # Should show 3.9+
 # Look for "Auto-loaded demo alert: INC0012345"
 ```
 
-### Gemini API errors
+### AWS Bedrock errors
 ```powershell
-# Verify API key in .env
-cat .env
+# Verify AWS credentials
+aws sts get-caller-identity
 
-# Test API key at: https://makersuite.google.com/app/apikey
+# Check Bedrock model access
+aws bedrock list-foundation-models --region us-east-1
 
 # Enable cached responses for testing
 # Edit .env: USE_CACHED_RESPONSES=true
 ```
 
 ### Analysis takes too long
-- Normal: 10-15 seconds for Gemini Pro reasoning
+- Normal: 5-8 seconds for Amazon Nova Pro reasoning
 - Check internet connection
 - Enable cached responses for instant demo
 
@@ -420,8 +524,8 @@ git clone [your-repo-url]
 cd alert-triage-ai
 
 # Install and run
-pip install fastapi uvicorn google-generativeai pydantic python-dotenv
-# Add your Gemini API key to .env
+pip install fastapi uvicorn boto3 pydantic python-dotenv
+# Configure AWS credentials (aws configure or .env)
 .\START.ps1
 
 # Click "Start Analysis" and watch the magic! ✨
