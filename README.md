@@ -12,17 +12,18 @@
 
 ## 🌐 Live Demo
 
-**🚀 Try it now:** [alert-triage-env.eba-ma57iqcm.us-east-1.elasticbeanstalk.com](http://alert-triage-env.eba-ma57iqcm.us-east-1.elasticbeanstalk.com)
+**🚀 Fully hosted application:** [http://alert-triage-env.eba-ma57iqcm.us-east-1.elasticbeanstalk.com](http://alert-triage-env.eba-ma57iqcm.us-east-1.elasticbeanstalk.com)
 
-**Frontend:** Open `frontend/index.html` (already configured to use deployed backend)
+**No installation needed!** The complete application (frontend + backend) is hosted on AWS.
 
 **What to try:**
-1. Click "Start Analysis" → AWS Bedrock analyzes the disk space alert
-2. Review the AI-generated remediation plan (92% confidence)
-3. Click "Approve & Execute" → See automated remediation in action
-4. View metrics: 4 min MTTR vs 45 min manual, $0.0018 cost per analysis
+1. Visit the URL above to see the live application
+2. Click "Start Analysis" → AWS Bedrock analyzes the disk space alert in real-time
+3. Review the AI-generated remediation plan (92% confidence)
+4. Click "Approve & Execute" → See automated remediation in action
+5. View metrics: 4 min MTTR vs 45 min manual, $0.0018 cost per analysis
 
-**Deployment:** Production-ready on AWS Elastic Beanstalk with 4 Gunicorn workers
+**Tech Stack:** Frontend + Backend hosted on AWS Elastic Beanstalk with 4 Gunicorn workers
 
 ---
 
@@ -68,14 +69,16 @@ A **context-aware agentic platform** that handles ALL IT operations:
 
 ### Option 1: Use Live Demo (Easiest!)
 
-**No installation required!** Just open the frontend:
+**Zero setup required!** The complete application is fully hosted on AWS:
 
-1. Download or clone this repository
-2. Open `frontend/index.html` in any browser
-3. Click "Start Analysis" to see AWS Bedrock in action
-4. The frontend is already connected to our deployed backend
+**Live URL:** http://alert-triage-env.eba-ma57iqcm.us-east-1.elasticbeanstalk.com
 
-**Backend API:** http://alert-triage-env.eba-ma57iqcm.us-east-1.elasticbeanstalk.com
+Just visit the URL and:
+1. See the live Alert Triage AI interface
+2. Click "Start Analysis" to see AWS Bedrock in action
+3. Experience the complete workflow instantly
+
+**Perfect for:** Judges, evaluators, or quick demos
 
 ### Option 2: Run Locally
 
@@ -131,14 +134,14 @@ start frontend\index.html
 ### Verification
 
 **For Live Demo:**
-1. Backend health check: http://alert-triage-env.eba-ma57iqcm.us-east-1.elasticbeanstalk.com/
-2. API documentation: http://alert-triage-env.eba-ma57iqcm.us-east-1.elasticbeanstalk.com/docs
-3. Open `frontend/index.html` and click "Start Analysis"
+1. Frontend + Backend: http://alert-triage-env.eba-ma57iqcm.us-east-1.elasticbeanstalk.com/
+2. API health check: http://alert-triage-env.eba-ma57iqcm.us-east-1.elasticbeanstalk.com/api/health
+3. API documentation: http://alert-triage-env.eba-ma57iqcm.us-east-1.elasticbeanstalk.com/docs
 
 **For Local Setup:**
-1. Backend health check: http://localhost:8000/
+1. Backend health check: http://localhost:8000/api/health
 2. API documentation: http://localhost:8000/docs
-3. Update frontend/index.html line 305: `const API_BASE = 'http://localhost:8000';`
+3. Frontend: http://localhost:8000/
 4. Click "Start Analysis" to see AI in action!
 
 ---
@@ -425,9 +428,10 @@ curl -X POST "http://localhost:8000/alerts/INC0012345/execute?approved=true"
    - Configure environment variables (AWS credentials)
    - Deploy!
 
-5. **Update frontend:**
-   - Edit `frontend/index.html` line 305
-   - Change `API_BASE` to your EB environment URL
+5. **Access your application:**
+   - Frontend + Backend: `http://your-env-name.elasticbeanstalk.com/`
+   - API docs: `http://your-env-name.elasticbeanstalk.com/docs`
+   - The frontend automatically uses the same domain for API calls
 
 ---
 
