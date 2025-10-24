@@ -4,6 +4,8 @@ API endpoints for alert triage and remediation
 '''
 from fastapi import FastAPI, HTTPException, Body
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from backend.models import Alert, RemediationPlan, ExecutionResult, HealthCheck
 from backend.aws_bedrock_service import BedrockService
 from backend.script_executor import ScriptExecutor
@@ -56,7 +58,7 @@ try:
 except Exception as e:
     print(f"[WARN] Could not auto-load demo alert: {e}")
 
-@app.get("/", response_model=HealthCheck)
+@app.get("/api/health", response_model=HealthCheck)
 def health_check():
     '''API health check'''
     return {
@@ -65,6 +67,14 @@ def health_check():
         "version": "1.0.0",
         "bedrock_configured": ai_service_configured
     }
+
+@app.get("/")
+async def serve_frontend():
+    '''Serve the frontend HTML'''
+    frontend_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "frontend", "index.html")
+    if os.path.exists(frontend_path):
+        return FileResponse(frontend_path)
+    return {"message": "Frontend not found. Visit /docs for API documentation."}
 
 @app.post("/alerts/ingest")
 async def ingest_alert(alert: Alert):

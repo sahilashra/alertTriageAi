@@ -302,7 +302,10 @@
     </main>
 
     <script>
-        const API_BASE = 'http://alert-triage-env.eba-ma57iqcm.us-east-1.elasticbeanstalk.com';
+        // Use relative URL when hosted on same server, or full URL for local testing
+        const API_BASE = window.location.protocol === 'file:'
+            ? 'http://alert-triage-env.eba-ma57iqcm.us-east-1.elasticbeanstalk.com'
+            : window.location.origin;
         const ALERT_ID = 'INC0012345';
 
         // AWS Bedrock pricing for Amazon Nova Pro
